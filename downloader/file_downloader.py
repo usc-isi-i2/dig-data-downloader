@@ -113,8 +113,8 @@ class FileDownloader():
         ts = datetime.datetime.now().isoformat()
         # use SHA-256 to generate hash for filename + identifier
         # hex_digest = hashlib.sha256(link.encode() + str(ts).encode()).hexdigest()
-        hex_digest = hashlib.sha256(link.encode()).hexdigest()
-        local_filename = identifier + '_' + hex_digest + '.' + file_type
+        #hex_digest = hashlib.sha256(link.encode()).hexdigest()
+        local_filename = identifier + '.' + file_type
 
         if link.startswith('ftp://'):
             # print link, local_filename
@@ -175,6 +175,5 @@ if __name__ == "__main__":
             },
             "identifier": "inflation_rate"
         },
-        "how_to_process": "Event"
     }
     updater.process(datasetconfig, True, False)
