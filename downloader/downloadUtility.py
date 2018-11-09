@@ -5,7 +5,7 @@ import traceback
 import os
 import shutil
 
-def run( dst_path, datasetconfig, clean_dst=False, force_download=True, overwrite_current_date=None):
+def run( dst_path, datasetconfig, downloadData,clean_dst=False, force_download=True, overwrite_current_date=None):
 
     try:
         print('\n> processing', datasetconfig["where_to_download"]["identifier"])
@@ -17,9 +17,9 @@ def run( dst_path, datasetconfig, clean_dst=False, force_download=True, overwrit
         # download
         print('File Downloads:')
         fs = FileDownloader( dst_dataset_path)
-        fs.process(datasetconfig,force=force_download, current_datetime=overwrite_current_date)
+        data=fs.process(datasetconfig,downloadData,force=force_download, current_datetime=overwrite_current_date)
 
-
+        print(data)
     except Exception as e:
         print('exception in run',e)
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -37,6 +37,5 @@ if __name__ == '__main__':
         },
         "identifier": "inflation_rate"
         },
-        "how_to_process": "Event"
     }
-    run("download/",datasetConfig)
+    run("download/",datasetConfig,True)
