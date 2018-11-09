@@ -18,20 +18,21 @@ class FileDownloader():
         self.dst_path = os.path.abspath(dst_path)
 
     # process metadata and download file, if scheduled
-    def process(self, dataset_file, force, current_datetime):
+    def process(self, dataset_file,downloadData, force, current_datetime):
 
         data = dataset_file["where_to_download"]
-        try:
-            os.makedirs(self.dst_path)
-        except OSError:
-            pass
-        os.chdir(self.dst_path)
+        if downloadData:
+            try:
+                os.makedirs(self.dst_path)
+            except OSError:
+                pass
+            os.chdir(self.dst_path)
 
         urls = self.generate_url_list(data, current_datetime)
 
         print(urls)
 
-        self.downloadHelper(urls, data, force, current_datetime)
+        return self.downloadHelper(urls, data, force, current_datetime,downloadData)
 
     @staticmethod
     def generate_url_list(data, current_datetime=None):
@@ -78,17 +79,24 @@ class FileDownloader():
 
         return urls
 
-    def downloadHelper(self, urls, data, force, current_datetime):
+    def downloadHelper(self, urls, data, force, current_datetime,downloadData):
         frequency = data["frequency"]
         identifier = data["identifier"]
         method = data.get("method", 'get')
         file_type = data['file_type']
         param = data['post'] if method == 'post' else dict()
         if self.checkDateMatch(frequency, current_datetime) or force:
+            result=[]
             for url in urls:
-                status_code, timestamp, fname = self.downloadFile(url, param, method, identifier, file_type)
-                if status_code == 200:
-                    self.addMetaData(url, timestamp, fname, identifier)
+                if downloadData:
+                    status_code, timestamp, fname = self.downloadFile(url, param, method, identifier, file_type)
+                    if status_code == 200:
+                        self.addMetaData(url, timestamp, fname, identifier)
+                    result.append((status_code, fname))
+                else:
+                    result.append(self.getContent(url, param, method, identifier, file_type))
+
+        return result
 
     # check if the file is scheduled to be downloaded for the current date
     def checkDateMatch(self, file_date, current_datetime):
@@ -146,7 +154,22 @@ class FileDownloader():
                             f.write(chunk)
 
                 return r.status_code, ts, local_filename
+    def getContent(self, link, parameters, method, identifier, file_type):
+            # GET request
+            if method == "get":
+                r = requests.get(url=link, params=parameters, stream=True)
+            # POST request
+            elif method == "post":
+                r = requests.post(url=link, params=parameters, stream=True)
+            content = []
+            # if status is not okay
+            if r.status_code != 200:
+                print('http download error', r.status_code)
+                return [(r.status_code, ts, local_filename)]
 
+            # if status is okay
+            elif r.status_code == 200:
+                return r.content.decode('utf-16')
     def addMetaData(self, url, timestamp, path, identifier):
         # metadata (CDR)
         dict = {
@@ -175,6 +198,5 @@ if __name__ == "__main__":
             },
             "identifier": "inflation_rate"
         },
-        "how_to_process": "Event"
     }
-    updater.process(datasetconfig, True, False)
+    print(updater.process(datasetconfig, False, True, False))
